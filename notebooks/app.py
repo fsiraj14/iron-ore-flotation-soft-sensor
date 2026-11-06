@@ -3,22 +3,27 @@ import pandas as pd
 import numpy as np
 import joblib
 import matplotlib.pyplot as plt
+import os
 
 st.set_page_config(page_title="Flotation Plant Quality Dashboard", layout="wide")
 
 st.title("⚙️ Flotation Plant Quality Prediction Dashboard")
 st.write("This application predicts the final **% Silica Concentrate** (impurity level) in the flotation process using real-time telemetry inputs.")
 
-# Load Model
+# Load Model from script directory
 @st.cache_resource
 def load_model():
-    return joblib.load('model_lasso.joblib')
+    # Resolve absolute path relative to this script file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_dir, 'model_lasso.joblib')
+    return joblib.load(model_path)
 
 try:
     model = load_model()
     st.sidebar.success("Model loaded successfully!")
 except Exception as e:
     st.sidebar.error(f"Error loading model: {e}")
+    st.error("⚠️ **Model Artifact Missing:** Please make sure that you have uploaded both `app.py` and `model_lasso.joblib` to the same folder in your GitHub repository.")
 
 # Sidebar Inputs for features
 st.sidebar.header("Real-Time Telemetry Inputs")
@@ -41,12 +46,12 @@ silica_target_lag1 = st.sidebar.number_input("Silica % (1h Lag)", value=2.0)
 silica_target_lag2 = st.sidebar.number_input("Silica % (2h Lag)", value=2.0)
 
 # Prepare input array (Must match training feature alignment)
-# List of expected features: 
+# List of expected features:
 # 8 original features + 18 lag features = 26 features
 features_list = [
-    'Pct_Iron_Feed', 'Amina_Flow', 'Ore_Pulp_pH', 
-    'Flotation_Column_02_Air_Flow', 'Flotation_Column_06_Air_Flow', 
-    'Flotation_Column_07_Air_Flow', 'Flotation_Column_04_Level', 
+    'Pct_Iron_Feed', 'Amina_Flow', 'Ore_Pulp_pH',
+    'Flotation_Column_02_Air_Flow', 'Flotation_Column_06_Air_Flow',
+    'Flotation_Column_07_Air_Flow', 'Flotation_Column_04_Level',
     'Flotation_Column_07_Level'
 ]
 
@@ -79,10 +84,13 @@ input_df = pd.DataFrame([input_data])
 
 # Prediction Action
 if st.button("🔮 Predict Silica Concentration"):
-    prediction = model.predict(input_df)[0]
-    st.metric(label="Predicted % Silica Concentrate", value=f"{prediction:.3f} %", delta=f"{prediction - 2.0:.2f} % deviation from Target (2%)")
-    
-    if prediction > 3.0:
-        st.warning("⚠️ High silica content detected! Adjust amina reagent flows.")
-    else:
-        st.success("✅ Concentrate meets quality thresholds.")
+    try:
+        prediction = model.predict(input_df)[0]
+        st.metric(label="Predicted % Silica Concentrate", value=f"{prediction:.3f} %", delta=f"{prediction - 2.0:.2f} % deviation from Target (2%)")
+
+        if prediction > 3.0:
+            st.warning("⚠️ High silica content detected! Adjust amina reagent flows.")
+        else:
+            st.success("✅ Concentrate meets quality thresholds.")
+    except NameError:
+        st.error("The model is not loaded. Please upload the model file to proceed.")
