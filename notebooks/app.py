@@ -44,9 +44,7 @@ with tab_performance:
     col_explain_1, col_explain_2 = st.columns(2)
     with col_explain_1:
         st.subheader("Key Assumptions & Design Decisions")
-        st.markdown("* **Chronological Time-Series Partitioning:** Random splits introduce extreme look-ahead data leakage because adjacent sensor measurements are highly correlated. We applied a strict **80% historical / 20% future** out-of-time test set.
-* **Temporal Process Lags (1h & 2h):** Because chemical reagents and ore feed take time to travel through the cascading flotation cells, introducing 1h and 2h feature lags turned negative R2 scores into highly descriptive models.
-* **Hourly Aggregation as a Low-Pass Filter:** Resampling sensors to 1-hour averages (Option A) outperforms high-frequency models (Option B) by removing local frothing turbulence and alignment noise.")
+        st.markdown("""* **Chronological Time-Series Partitioning:** Random splits introduce extreme look-ahead data leakage because adjacent sensor measurements are highly correlated. We applied a strict **80% historical / 20% future** out-of-time test set.\n* **Temporal Process Lags (1h & 2h):** Because chemical reagents and ore feed take time to travel through the cascading flotation cells, introducing 1h and 2h feature lags turned negative R2 scores into highly descriptive models.\n* **Hourly Aggregation as a Low-Pass Filter:** Resampling sensors to 1-hour averages (Option A) outperforms high-frequency models (Option B) by removing local frothing turbulence and alignment noise.""")
 
     with col_explain_2:
         st.subheader("Out-of-Time Performance Plot")
@@ -69,13 +67,13 @@ with tab_performance:
     st.markdown("--- ")
     st.subheader("🎯 Predicted vs. Actual Scatter Plots")
     col_scatter_A, col_scatter_B = st.columns(2)
-    
+
     with col_scatter_A:
         st.markdown("**Option A (Hourly Mean with Lags) - Lasso**")
         np.random.seed(42)
         y_test_A_synth = np.random.uniform(1.2, 4.5, 400)
         preds_A_synth = y_test_A_synth + np.random.normal(0, 0.44, 400)
-        
+
         fig_s1, ax_s1 = plt.subplots(figsize=(6, 4.5))
         ax_s1.scatter(y_test_A_synth, preds_A_synth, alpha=0.5, color='cyan', edgecolors='k')
         lims_A = [min(y_test_A_synth.min(), preds_A_synth.min()), max(y_test_A_synth.max(), preds_A_synth.max())]
@@ -94,7 +92,7 @@ with tab_performance:
         np.random.seed(101)
         y_test_B_synth = np.random.uniform(1.2, 4.5, 400)
         preds_B_synth = y_test_B_synth + np.random.normal(0, 0.49, 400)
-        
+
         fig_s2, ax_s2 = plt.subplots(figsize=(6, 4.5))
         ax_s2.scatter(y_test_B_synth, preds_B_synth, alpha=0.5, color='orange', edgecolors='k')
         lims_B = [min(y_test_B_synth.min(), preds_B_synth.min()), max(y_test_B_synth.max(), preds_B_synth.max())]
@@ -188,18 +186,13 @@ with tab_operator:
             optimal_flow = min(valid_flows)
             optimal_pred = predict_silica(optimal_flow)
             flow_delta = optimal_flow - amina_flow_current
-            st.info(f""### Recommended Reagent Correction Setpoint
-* **Adjust Amina Flow To:** `{optimal_flow:.1f} m3/h` (Delta Change: `{flow_delta:+.1f} m3/h`)
-* **Predicted % Silica Concentrate:** `{optimal_pred:.3f} %` (Target achieved)"")
+            st.info(f"""### Recommended Reagent Correction Setpoint\n* **Adjust Amina Flow To:** `{optimal_flow:.1f} m3/h` (Delta Change: `{flow_delta:+.1f} m3/h`)\n* **Predicted % Silica Concentrate:** `{optimal_pred:.3f} %` (Target achieved)""")
         else:
             best_idx = np.argmin(predictions)
             best_flow = flows[best_idx]
             best_pred = predictions[best_idx]
             flow_delta = best_flow - amina_flow_current
-            st.warning(f""### Constraints Bound Reached
-Current feed composition prohibits achieving < 2.0% Silica concentrate target purely via Amina flow.
-* **Emergency Safety Setpoint:** `{best_flow:.1f} m3/h` (Delta Change: `{flow_delta:+.1f} m3/h`)
-* **Minimized predicted Silica:** `{best_pred:.3f} %`"")
+            st.warning(f"""### Constraints Bound Reached\nCurrent feed composition prohibits achieving < 2.0% Silica concentrate target purely via Amina flow.\n* **Emergency Safety Setpoint:** `{best_flow:.1f} m3/h` (Delta Change: `{flow_delta:+.1f} m3/h`)\n* **Minimized predicted Silica:** `{best_pred:.3f} %`""")
 
         fig, ax = plt.subplots(figsize=(10, 4.5))
         ax.plot(flows, predictions, label="Projected Impurity Sweep", color="#1f77b4", linewidth=2)
